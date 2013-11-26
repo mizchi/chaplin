@@ -1,6 +1,7 @@
 {
   "name": "chaplin",
   "version": "0.11.3",
+  "main": "build/chaplin.js",
   "dependencies": {
     "mocha": "1.13.x",
     "expect": "0.2.x",
