@@ -111,17 +111,31 @@ module.exports = class Dispatcher
     @currentQuery = options.query
 
     # Call the controller action with params and options.
-    controller[route.action] params, route, options
+    action = controller[route.action]
 
-    # Stop if the action triggered a redirect.
-    return if controller.redirected
+    execute = =>
+      if controller.redirected or @currentRoute and route isnt @currentRoute
+        controller.dispose()
+        # Stop if the action triggered a redirect.
+        return if controller.redirected
+        
+        @adjustURL route, params, options
+        @publishEvent 'dispatcher:dispatch', @currentController,
+          params, route, options
 
-    # Adjust the URL.
-    @adjustURL route, params, options
+    unless action then return execute()
 
-    # We're done! Spread the word!
-    @publishEvent 'dispatcher:dispatch', @currentController,
-      params, route, options
+    # Throw deprecation warning.
+    if typeof action isnt 'function'
+      throw new TypeError 'Controller\##{route}: function expected. '
+
+    # Execute action in controller context.
+    promise = action params, route, options
+
+    if promise and promise.then
+      promise.then execute
+    else
+      executeAction()
 
   # Executes before action filterer.
   executeBeforeAction: (controller, route, params, options) ->
